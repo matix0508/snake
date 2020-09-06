@@ -31,6 +31,9 @@ class Database:
         self.get_tables()
 
     def create_table(self, name: str, cols: tuple):
+        new = False
+        if not self.table_exists(name):
+            new = True
         if not self.conn:
             self.create_connection()
 
@@ -40,7 +43,9 @@ class Database:
 
         sql_command = sql_command[:-2] + ");"
         self.save(sql_command)
-        print(f"[INFO]:: {name.upper()} table created")
+        if new:
+            print(f"[INFO]:: {name.upper()} table created")
+
 
 
     def insert(self, table_name: str, data: tuple):
@@ -73,12 +78,22 @@ class Database:
         sql = 'drop table if exists ' + name
         self.save(sql)
 
-    def check_if_row_exists(self, table: str, column: str, value: str):
+    def row_exists(self, table: str, column: str, value: str):
         self.create_connection()
         self.cursor.execute(f"SELECT rowid FROM {table} WHERE {column} = ?", (value,))
         data=self.cursor.fetchall()
         self.save()
         if len(data)==0:
+            return False
+        else:
+            return True
+
+    def table_exists(self, table: str):
+        self.create_connection()
+        self.cursor.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='{table}';")
+        data=self.cursor.fetchall()
+        self.save()
+        if len(data) == 0:
             return False
         else:
             return True
