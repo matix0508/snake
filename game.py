@@ -44,28 +44,30 @@ class Food:
 
 
 class Snake:
-    def __init__(self):
-        self.body = [Position(5, 5)]
+    def __init__(self, game):
+        self.body = [Position(randint(3, game.SIDE - 3), randint(3, game.SIDE - 3))]
         self.add = False
+        self.side = game.SIDE
 
 
     def up(self):
-        new = self.body[-1] + Position(0, -1)
-        self.move(new)
+        if self.head().y > 0:
+            self.move(0, -1)
 
     def down(self):
-        new = self.body[-1] + Position(0, 1)
-        self.move(new)
+        if self.head().y < self.side-1:
+            self.move(0, 1)
 
     def right(self):
-        new = self.body[-1] + Position(1, 0)
-        self.move(new)
+        if self.head().x < self.side-1:
+            self.move(1, 0)
 
     def left(self):
-        new = self.body[-1] + Position(-1, 0)
-        self.move(new)
+        if self.head().x > 0:
+            self.move(-1, 0)
 
-    def move(self, new):
+    def move(self, x, y):
+        new = self.body[-1] + Position(x, y)
         self.body.append(new)
         if not self.add:
             self.body.pop(0)
@@ -131,7 +133,7 @@ class Game:
         pygame.display.set_caption(self.TITLE)
         self.clock = pygame.time.Clock()
 
-        self.snake = Snake()
+        self.snake = Snake(self)
         self.food = Food(self)
 
         gameIcon = pygame.image.load('snake.png')
