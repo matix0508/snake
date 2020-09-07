@@ -40,7 +40,7 @@ class Food:
         while self.position in game.snake.body:
             self.position = Position(randint(0, game.SIDE-1), randint(0, game.SIDE-1))
 
-        print(f"food: {self.position}")
+        # print(f"food: {self.position}")
 
 
 class Snake:
