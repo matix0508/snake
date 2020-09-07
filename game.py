@@ -48,30 +48,47 @@ class Snake:
         self.body = [Position(randint(3, game.SIDE - 3), randint(3, game.SIDE - 3))]
         self.add = False
         self.side = game.SIDE
+        self.up = False
+        self.down = False
+        self.right = False
+        self.left = False
+        self.game = game
 
 
-    def up(self):
+    def go_up(self):
         if self.head().y > 0:
             self.move(0, -1)
+        else:
+            self.game.game_over()
 
-    def down(self):
+    def go_down(self):
         if self.head().y < self.side-1:
             self.move(0, 1)
+        else:
+            self.game.game_over()
 
-    def right(self):
+    def go_right(self):
         if self.head().x < self.side-1:
             self.move(1, 0)
+        else:
+            self.game.game_over()
 
-    def left(self):
+    def go_left(self):
         if self.head().x > 0:
             self.move(-1, 0)
+        else:
+            self.game.game_over()
 
     def move(self, x, y):
         new = self.body[-1] + Position(x, y)
-        self.body.append(new)
-        if not self.add:
-            self.body.pop(0)
-        self.add = False
+        if not new in self.body:
+            self.body.append(new)
+            if not self.add:
+                self.body.pop(0)
+            self.add = False
+        else:
+            self.game.game_over()
+
 
     def draw(self, game):
         #
@@ -90,6 +107,12 @@ class Snake:
 
     def head(self):
         return self.body[-1]
+
+    def move_reset(self):
+        self.up = False
+        self.down = False
+        self.right = False
+        self.left = False
 
 
 class Game:
@@ -116,6 +139,8 @@ class Game:
         self.snake = None
         self.food = None
 
+        self.counter = 0
+
     def main(self):
         self.setup()
         self.mainloop = True
@@ -139,6 +164,8 @@ class Game:
         gameIcon = pygame.image.load('snake.png')
         pygame.display.set_icon(gameIcon)
 
+        self.counter = 0
+
 
     def check_events(self):
         for event in pygame.event.get():
@@ -148,13 +175,17 @@ class Game:
                     quit()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_UP:
-                    self.snake.up()
+                    self.snake.move_reset()
+                    self.snake.up = True
                 if event.key == pygame.K_DOWN:
-                    self.snake.down()
+                    self.snake.move_reset()
+                    self.snake.down = True
                 if event.key == pygame.K_RIGHT:
-                    self.snake.right()
+                    self.snake.move_reset()
+                    self.snake.right = True
                 if event.key == pygame.K_LEFT:
-                    self.snake.left()
+                    self.snake.move_reset()
+                    self.snake.left = True
 
 
 
@@ -177,8 +208,22 @@ class Game:
         pygame.display.update()
 
     def update(self):
+        self.counter += 1
         if self.snake.head() == self.food.position:
             self.snake.add = True
             self.food.respawn(self)
+
+        if self.counter % 5 == 0:
+            if self.snake.up:
+                self.snake.go_up()
+            if self.snake.down:
+                self.snake.go_down()
+            if self.snake.right:
+                self.snake.go_right()
+            if self.snake.left:
+                self.snake.go_left()
+
+    def game_over(self):
+        print("game over")
 
 Game().main()
