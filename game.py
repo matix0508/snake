@@ -1,6 +1,7 @@
 import pygame
 from math import sqrt
 from random import randint
+from database import Database
 
 
 class Position:
@@ -39,6 +40,7 @@ class Food:
         self.position = Position(randint(0, game.SIDE-1), randint(0, game.SIDE-1))
         while self.position in game.snake.body:
             self.position = Position(randint(0, game.SIDE-1), randint(0, game.SIDE-1))
+            game.score += 1
 
         # print(f"food: {self.position}")
 
@@ -119,7 +121,7 @@ class Game:
     WIDTH = 400
     HEIGHT = 400
 
-    SIDE = 13
+    SIDE = 7
 
     TILE_WIDTH = WIDTH / SIDE
     TILE_HEIGHT = HEIGHT / SIDE
@@ -132,14 +134,18 @@ class Game:
 
     def __init__(self):
         self.mainloop = False
+        self.menu_loop = False
 
         self.win = None
         self.clock = None
 
         self.snake = None
         self.food = None
+        self.score = 0
 
         self.counter = 0
+
+        self.best_score = 0
 
     def main(self):
         self.setup()
@@ -151,6 +157,17 @@ class Game:
             self.check_events()
 
             self.draw_window()
+
+    def menu(self):
+        self.setup()
+        self.menu_loop = True
+        while self.menu_loop:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                        self.run_loop = False
+                        pygame.quit()
+                        quit()
+
 
 
     def setup(self):
@@ -165,6 +182,10 @@ class Game:
         pygame.display.set_icon(gameIcon)
 
         self.counter = 0
+
+        self.db = Database("snake")
+        if self.db.table_exists('score'):
+            self.best_score = self.db.select('best_score') # to write function Db.select()
 
 
     def check_events(self):
@@ -224,6 +245,6 @@ class Game:
                 self.snake.go_left()
 
     def game_over(self):
-        print("game over")
+        self.mainloop = False
 
 Game().main()

@@ -98,6 +98,9 @@ class Database:
         else:
             return True
 
+    def select(self, table, column):
+        pass # todo: get data from db
+
 
 
 
