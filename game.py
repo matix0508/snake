@@ -2,6 +2,12 @@ import pygame
 from math import sqrt
 from random import randint
 from database import Database
+pygame.font.init()
+
+
+def text_objects(text, font):
+    textSurface = font.render(text, True, (0, 0, 0))
+    return textSurface, textSurface.get_rect()
 
 
 class Position:
@@ -121,10 +127,8 @@ class Game:
     WIDTH = 400
     HEIGHT = 400
 
-    SIDE = 7
+    # SIDE = 7
 
-    TILE_WIDTH = WIDTH / SIDE
-    TILE_HEIGHT = HEIGHT / SIDE
     TILE_BORDER = 1
 
 
@@ -132,12 +136,21 @@ class Game:
 
     TITLE = "Snake"
 
-    def __init__(self):
+    STAT_FONT = pygame.font.SysFont("comicsans", 50)
+    MID_FONT = pygame.font.SysFont("comicsans", 75)
+    LARGE_FONT = pygame.font.SysFont("comicsans", 100)
+
+    def __init__(self, side):
         self.mainloop = False
         self.menu_loop = False
 
         self.win = None
         self.clock = None
+
+        self.TILE_WIDTH = self.WIDTH / side
+        self.TILE_HEIGHT = self.HEIGHT / side
+
+        self.SIDE = side
 
         self.snake = None
         self.food = None
@@ -168,6 +181,18 @@ class Game:
                         pygame.quit()
                         quit()
 
+            self.win.fill((0, 0, 0))
+            TextSurf, TextRect = text_objects("Snake", self.LARGE_FONT)
+            TextRect.center = (self.WIDTH / 2, self.HEIGHT / 2)
+            self.win.blit(TextSurf, TextRect)
+
+            self.button("Play a Game", 100, 100, 220, 50, (0, 250, 0), (0, 200, 0), self.main)
+
+
+            pygame.display.update()
+            self.clock.tick(15)
+
+
 
 
     def setup(self):
@@ -184,8 +209,9 @@ class Game:
         self.counter = 0
 
         self.db = Database("snake")
-        if self.db.table_exists('score'):
-            self.best_score = self.db.select('best_score') # to write function Db.select()
+        # if self.db.table_exists('score'):
+        #     pass
+        #     # self.best_score = self.db.select('best_score') # to write function Db.select()
 
 
     def check_events(self):
@@ -247,4 +273,23 @@ class Game:
     def game_over(self):
         self.mainloop = False
 
-Game().main()
+
+    def button(self, msg, x, y, w, h, ic, ac, action=None):
+        """
+        helps to create buttons on the screen
+        """
+        mouse = pygame.mouse.get_pos()
+        click = pygame.mouse.get_pressed()
+
+        if x+w > mouse[0] > x and y+h > mouse[1] > y:
+            pygame.draw.rect(self.win, ac,(x,y,w,h))
+            if click[0] == 1 and action != None:
+                action()
+
+        else:
+            pygame.draw.rect(self.win, ic,(x,y,w,h))
+        textSurf, textRect = text_objects(msg, self.STAT_FONT)
+        textRect.center = ( (x+(w/2)), (y+(h/2)) )
+        self.win.blit(textSurf, textRect)
+
+Game(13).menu()
