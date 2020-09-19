@@ -62,15 +62,12 @@ class Database:
         sql = sql[:-2] + ");"
         self.save(sql)
 
-    def select(self, table: str):
-        pass
-
 
 
     def get_tables(self):
         self.create_connection()
         self.cursor.execute('SELECT name from sqlite_master where type= "table"')
-        self.tables = db.cursor.fetchall()
+        self.tables = self.cursor.fetchall()
         self.close()
 
     def drop_table(self, name: str):
@@ -98,17 +95,26 @@ class Database:
         else:
             return True
 
-    def select(self, table, column):
-        pass # todo: get data from db
+    def select(self, table: str, column: str, condition: tuple):
+        self.create_connection()
+        self.cursor.execute(f"SELECT {column} FROM {table} WHERE {condition[0]} == '{condition[1]}'")
+        data = self.cursor.fetchall()
+        self.save()
+        return data[0][0]
 
+    def update(self, table: str, data: tuple, condition: tuple):
+        self.create_connection()
+        sql = f"UPDATE {table} SET {data[0]} = '{data[1]}' WHERE {condition[0]} == '{condition[1]}'"
+        self.save(sql)
 
-
-
-
-db = Database("game.db")
-db.create_connection()
-db.create_table('users',
-                ('id integer PRIMARY KEY',
-                'nick text NOT NULL',
-                'score integer'
-                ))
+# db = Database("game.db")
+# db.create_connection()
+# db.create_table('users',
+#                 ('id integer PRIMARY KEY',
+#                 'nick text NOT NULL',
+#                 'score integer'
+#                 ))
+#
+# db.insert('users', (('nick', 'matix0508'), ('score', '5')))
+# db.update('users', ('score', '10'), ('nick', 'matix0508'))
+# print(db.select('users', 'score', ('nick', 'matix0508')))
