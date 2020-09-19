@@ -12,6 +12,16 @@ def text_objects(text, font, color=None):
     textSurface = font.render(text, True, color)
     return textSurface, textSurface.get_rect()
 
+class Player:
+    def __init__(self, nick: str):
+        self.nick = nick
+        self.games = None
+        self.best_score = None
+
+    def average_score(self):
+        if self.games and self.best_score:
+            return self.best_score / self.games
+
 
 class Position:
     def __init__(self, x, y):
@@ -147,6 +157,7 @@ class Game:
     def __init__(self, side):
         self.mainloop = False
         self.menu_loop = False
+        self.change_player_loop = False
 
         self.win = None
         self.clock = None
@@ -162,8 +173,11 @@ class Game:
 
         self.counter = 0
 
-        self.best_score = 0
         self.db = None
+
+        self.players = []
+        self.player = None
+        self.player_index = 0
 
     def main(self):
         self.setup()
@@ -176,7 +190,7 @@ class Game:
 
             self.draw_window()
 
-        sleep(1)
+
 
     def menu(self):
         self.setup()
@@ -191,12 +205,39 @@ class Game:
             TextRect.center = (self.WIDTH / 2, 100)
             self.win.blit(TextSurf, TextRect)
 
-            TextSurf, TextRect = text_objects(f"Best score: {self.best_score}", self.SMALL_FONT, (255, 255, 255))
+            TextSurf, TextRect = text_objects(f"Best score: {self.player.best_score}", self.SMALL_FONT, (255, 255, 255))
             TextRect.center = (self.WIDTH - 100 , 50)
             self.win.blit(TextSurf, TextRect)
 
+            TextSurf, TextRect = text_objects(f"{self.player.nick}", self.SMALL_FONT, (255, 255, 0))
+            TextRect.center = (100 , 50)
+            self.win.blit(TextSurf, TextRect)
+
             self.button("Play a Game", 100, 150, 220, 50, (0, 250, 0), (0, 200, 0), self.main)
-            self.button("Exit", 100, 200, 140, 50, (255, 0, 0), (200, 0, 0), self.exit)
+            self.button("Change player", 100, 200, 260, 50, (255, 255, 0), (200, 200, 0), self.change_player)
+            self.button("Exit", 100, 250, 140, 50, (255, 0, 0), (200, 0, 0), self.exit)
+
+
+            pygame.display.update()
+            self.clock.tick(15)
+
+
+    def change_player(self):
+        self.setup()
+        self.change_player_loop = True
+        while self.change_player_loop:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                        self.exit()
+
+            self.win.fill((0, 0, 0))
+
+            for i, player in enumerate(self.players):
+                self.button(player.nick,
+                            100, 150 + 50*i, # coordinates
+                            220, 50, # size
+                            (0, 250, 0), (0, 200, 0), # colors
+                            lambda: self.switch_player(i)) # action
 
 
             pygame.display.update()
@@ -204,8 +245,11 @@ class Game:
 
 
 
-
     def setup(self):
+        self.mainloop = False
+        self.menu_loop = False
+        self.change_player_loop = False
+
         self.win = pygame.display.set_mode((self.WIDTH, self.HEIGHT))
         pygame.display.set_caption(self.TITLE)
         self.clock = pygame.time.Clock()
@@ -219,17 +263,26 @@ class Game:
         self.counter = 0
         self.score = 0
 
+        self.players = []
+
         self.db = Database("snake.db")
-        if self.db.table_exists('players'):
-            self.best_score = self.db.select('players', 'best_score', ('nick', 'matix0508')) # to write function Db.select()
-        else:
+        if not self.db.table_exists('players'):
             self.db.create_table('players',
                             ('id integer PRIMARY KEY',
                             'nick text NOT NULL',
-                            'best_score integer'
+                            'best_score integer',
+                            'games integer'
                             ))
-            self.db.insert('players', (('nick', 'matix0508'), ('best_score', '0')))
-            self.best_score = 0
+            for nick in ('matix0508', 'guest'):
+                self.db.insert('players', (('nick', nick), ('best_score', '0'), ('games', '0')))
+
+        pl1 = Player('matix0508')
+        pl2 = Player('guest')
+        for player in (pl1, pl2):
+            player.best_score = self.db.select('players', 'best_score', ('nick', player.nick))
+            player.games = self.db.select('players', 'games', ('nick', player.nick))
+            self.players.append(player)
+        self.player = self.players[self.player_index]
 
     def check_events(self):
         for event in pygame.event.get():
@@ -291,10 +344,15 @@ class Game:
                 self.snake.go_left()
 
     def game_over(self):
+        sleep(1)
         self.mainloop = False
-        if self.score > self.best_score:
-            self.best_score = self.score
-            self.db.update('players', ('best_score', str(self.best_score)), ('nick', 'matix0508'))
+        self.player.games += 1
+        if self.score > self.player.best_score:
+            self.player.best_score = self.score
+            self.db.update('players', ('best_score', str(self.player.best_score)), ('nick', self.player.nick))
+
+        self.db.update('players', ('games', str(self.player.games)), ('nick', self.player.nick))
+        self.menu()
         # pygame.quit()
         # quit()
 
@@ -320,5 +378,9 @@ class Game:
     def exit(self):
         pygame.quit()
         quit()
+
+    def switch_player(self, i):
+        self.player_index = i
+        self.menu()
 
 Game(13).menu()

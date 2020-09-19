@@ -97,7 +97,10 @@ class Database:
 
     def select(self, table: str, column: str, condition: tuple):
         self.create_connection()
-        self.cursor.execute(f"SELECT {column} FROM {table} WHERE {condition[0]} == '{condition[1]}'")
+        sql = f"SELECT {column} FROM {table}"
+        if condition:
+            sql += f"\n WHERE {condition[0]} == '{condition[1]}'"
+        self.cursor.execute(sql)
         data = self.cursor.fetchall()
         self.save()
         return data[0][0]
