@@ -175,7 +175,7 @@ class Game:
 
         self.db = None
 
-        self.players = [Player('matix0508'), Player('guest')]
+        self.players = [Player('matix0508'), Player('guest')] #initial Players
         self.player = None
         self.player_index = 0
 
