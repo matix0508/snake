@@ -175,7 +175,7 @@ class Game:
 
         self.db = None
 
-        self.players = []
+        self.players = [Player('matix0508'), Player('guest')]
         self.player = None
         self.player_index = 0
 
@@ -263,7 +263,6 @@ class Game:
         self.counter = 0
         self.score = 0
 
-        self.players = []
 
         self.db = Database("snake.db")
         if not self.db.table_exists('players'):
@@ -273,15 +272,16 @@ class Game:
                             'best_score integer',
                             'games integer'
                             ))
-            for nick in ('matix0508', 'guest'):
-                self.db.insert('players', (('nick', nick), ('best_score', '0'), ('games', '0')))
+            # for nick in ('matix0508', 'guest'):
+            #     self.db.insert('players', (('nick', nick), ('best_score', '0'), ('games', '0')))
 
-        pl1 = Player('matix0508')
-        pl2 = Player('guest')
-        for player in (pl1, pl2):
+
+        for player in self.players:
+            if not self.db.row_exists('players', 'nick', player.nick):
+                self.db.insert('players', (('nick', player.nick), ('best_score', '0'), ('games', '0')))
             player.best_score = self.db.select('players', 'best_score', ('nick', player.nick))
             player.games = self.db.select('players', 'games', ('nick', player.nick))
-            self.players.append(player)
+
         self.player = self.players[self.player_index]
 
     def check_events(self):
