@@ -3,7 +3,9 @@ from math import sqrt
 from random import randint
 from database import Database
 from time import sleep
+import string
 pygame.font.init()
+
 
 
 def text_objects(text, font, color=None):
@@ -21,6 +23,12 @@ class Player:
     def average_score(self):
         if self.games and self.best_score:
             return self.best_score / self.games
+
+    def __eq__(self, other):
+        if self.nick == other.nick:
+            True
+        else:
+            False
 
 
 class Position:
@@ -175,7 +183,7 @@ class Game:
 
         self.db = None
 
-        self.players = [Player('matix0508'), Player('guest')] #initial Players
+        self.players = [Player("guest")]
         self.player = None
         self.player_index = 0
 
@@ -238,10 +246,44 @@ class Game:
                             220, 50, # size
                             (0, 250, 0), (0, 200, 0), # colors
                             lambda: self.switch_player(i)) # action
+                if i != 0:
+                    self.button("-", 50, 150 + 50*i, 50, 50, (250, 0, 0), (200, 0, 0), lambda: self.delete_player(i))
+
+            self.button("+", self.WIDTH - 100, 50, 50, 50, (0, 250, 0), (0, 200, 0), self.add_player)
 
 
             pygame.display.update()
             self.clock.tick(15)
+
+    def add_player(self):
+        self.setup()
+        self.add_player_loop = True
+        name = ""
+        while self.add_player_loop:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.exit()
+                if event.type == pygame.KEYDOWN:
+                    key = pygame.key.name(event.key)
+                    if key in string.ascii_lowercase or key in string.digits:
+                        name += key
+                    if event.key == pygame.K_BACKSPACE:
+                        name = name[:-1]
+                    if event.key == pygame.K_RETURN:
+                        self.players.append(Player(name))
+                        self.menu()
+
+
+            self.win.fill((0, 0, 0))
+
+            TextSurf, TextRect = text_objects(f"{name}", self.STAT_FONT, (255, 255, 0))
+            TextRect.center = (self.WIDTH // 2 , self.HEIGHT // 2)
+            self.win.blit(TextSurf, TextRect)
+
+
+            pygame.display.update()
+            self.clock.tick(60)
+
 
 
 
@@ -274,11 +316,24 @@ class Game:
                             ))
             # for nick in ('matix0508', 'guest'):
             #     self.db.insert('players', (('nick', nick), ('best_score', '0'), ('games', '0')))
-
+        self.db.create_connection()
+        self.db.cursor.execute("SELECT * FROM players")
+        data = self.db.cursor.fetchall()
+        for player in data:
+            _, nick, _, _ = player
+            nicks = []
+            for player in self.players:
+                nicks.append(player.nick)
+            if nick not in nicks:
+                self.players.append(Player(nick))
 
         for player in self.players:
             if not self.db.row_exists('players', 'nick', player.nick):
-                self.db.insert('players', (('nick', player.nick), ('best_score', '0'), ('games', '0')))
+                if not player.best_score:
+                    player.best_score = 0
+                if not player.games:
+                    player.games = 0
+                self.db.insert('players', (('nick', player.nick), ('best_score', player.best_score), ('games', player.games)))
             player.best_score = self.db.select('players', 'best_score', ('nick', player.nick))
             player.games = self.db.select('players', 'games', ('nick', player.nick))
 
@@ -289,6 +344,7 @@ class Game:
             if event.type == pygame.QUIT:
                     self.exit()
             if event.type == pygame.KEYDOWN:
+                key = pygame.key.name(event.key)
                 if event.key == pygame.K_UP:
                     self.snake.move_reset()
                     self.snake.up = True
@@ -301,6 +357,7 @@ class Game:
                 if event.key == pygame.K_LEFT:
                     self.snake.move_reset()
                     self.snake.left = True
+
 
 
 
@@ -382,5 +439,15 @@ class Game:
     def switch_player(self, i):
         self.player_index = i
         self.menu()
+
+    def delete_player(self, i):
+        nick = self.players[i]
+        self.db.delete("players")
+        self.db.create_connection()
+        self.db.cursor.execute("SELECT * FROM players")
+        data = self.db.cursor.fetchall()
+        self.db.save()
+        print(data)
+        self.players.pop(i)
 
 Game(13).menu()

@@ -110,6 +110,13 @@ class Database:
         sql = f"UPDATE {table} SET {data[0]} = '{data[1]}' WHERE {condition[0]} == '{condition[1]}'"
         self.save(sql)
 
+    def delete(self, table: str, condition=None):
+        self.create_connection()
+        sql = f"DELETE FROM {table}"
+        if condition:
+            sql += f" WHERE {condition};"
+        self.save(sql)
+
 # db = Database("game.db")
 # db.create_connection()
 # db.create_table('users',
