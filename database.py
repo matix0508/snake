@@ -2,6 +2,7 @@ import sqlite3
 from sqlite3 import Error
 from os.path import isfile
 
+
 class Database:
     def __init__(self, db_file):
         self.db_file = db_file
@@ -46,9 +47,8 @@ class Database:
         if new:
             print(f"[INFO]:: {name.upper()} table created")
 
-
-
     def insert(self, table_name: str, data: tuple):
+
         self.create_connection()
         sql = f"INSERT INTO {table_name}(\n"
         for item in data:
@@ -62,11 +62,11 @@ class Database:
         sql = sql[:-2] + ");"
         self.save(sql)
 
-
-
     def get_tables(self):
         self.create_connection()
-        self.cursor.execute('SELECT name from sqlite_master where type= "table"')
+        self.cursor.execute(
+            'SELECT name from sqlite_master where type= "table"'
+        )
         self.tables = self.cursor.fetchall()
         self.close()
 
@@ -77,18 +77,22 @@ class Database:
 
     def row_exists(self, table: str, column: str, value: str):
         self.create_connection()
-        self.cursor.execute(f"SELECT rowid FROM {table} WHERE {column} = ?", (value,))
-        data=self.cursor.fetchall()
+        self.cursor.execute(
+            f"SELECT rowid FROM {table} WHERE {column} = ?", (value,)
+        )
+        data = self.cursor.fetchall()
         self.save()
-        if len(data)==0:
+        if len(data) == 0:
             return False
         else:
             return True
 
     def table_exists(self, table: str):
         self.create_connection()
-        self.cursor.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='{table}';")
-        data=self.cursor.fetchall()
+        self.cursor.execute(
+            f"SELECT name FROM sqlite_master WHERE type='table' AND name='{table}';"
+        )
+        data = self.cursor.fetchall()
         self.save()
         if len(data) == 0:
             return False
