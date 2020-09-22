@@ -271,7 +271,7 @@ class Game:
                         name = name[:-1]
                     if event.key == pygame.K_RETURN:
                         self.players.append(Player(name))
-                        self.menu()
+                        self.change_player()
 
 
             self.win.fill((0, 0, 0))
