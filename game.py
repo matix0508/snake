@@ -276,6 +276,10 @@ class Game:
 
             self.win.fill((0, 0, 0))
 
+            TextSurf, TextRect = text_objects("type your nick:", self.STAT_FONT, (255, 255, 0))
+            TextRect.center = (self.WIDTH // 2 , self.HEIGHT // 4)
+            self.win.blit(TextSurf, TextRect)
+
             TextSurf, TextRect = text_objects(f"{name}", self.STAT_FONT, (255, 255, 0))
             TextRect.center = (self.WIDTH // 2 , self.HEIGHT // 2)
             self.win.blit(TextSurf, TextRect)
