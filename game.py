@@ -65,8 +65,9 @@ class Food:
                         )
     def respawn(self, game):
         self.position = Position(randint(0, game.SIDE-1), randint(0, game.SIDE-1))
-        while self.position in game.snake.body:
-            self.position = Position(randint(0, game.SIDE-1), randint(0, game.SIDE-1))
+        for snake in game.snakes:
+            while self.position in snake.body:
+                self.position = Position(randint(0, game.SIDE-1), randint(0, game.SIDE-1))
         game.score += 1
 
         # print(f"food: {self.position}")
@@ -175,7 +176,7 @@ class Game:
 
         self.SIDE = side
 
-        self.snake = None
+        self.snakes = []
         self.food = None
         self.score = 0
 
@@ -300,7 +301,7 @@ class Game:
         pygame.display.set_caption(self.TITLE)
         self.clock = pygame.time.Clock()
 
-        self.snake = Snake(self)
+        self.snakes = [Snake(self)]
         self.food = Food(self)
 
         gameIcon = pygame.image.load('snake.png')
@@ -350,17 +351,17 @@ class Game:
             if event.type == pygame.KEYDOWN:
                 key = pygame.key.name(event.key)
                 if event.key == pygame.K_UP:
-                    self.snake.move_reset()
-                    self.snake.up = True
+                    self.snakes[0].move_reset()
+                    self.snakes[0].up = True
                 if event.key == pygame.K_DOWN:
-                    self.snake.move_reset()
-                    self.snake.down = True
+                    self.snakes[0].move_reset()
+                    self.snakes[0].down = True
                 if event.key == pygame.K_RIGHT:
-                    self.snake.move_reset()
-                    self.snake.right = True
+                    self.snakes[0].move_reset()
+                    self.snakes[0].right = True
                 if event.key == pygame.K_LEFT:
-                    self.snake.move_reset()
-                    self.snake.left = True
+                    self.snakes[0].move_reset()
+                    self.snakes[0].left = True
 
 
 
@@ -380,7 +381,8 @@ class Game:
                                 self.TILE_BORDER)
 
         self.food.draw(self)
-        self.snake.draw(self)
+        for snake in self.snakes:
+            snake.draw(self)
 
         TextSurf, TextRect = text_objects(f"score: {self.score}", self.SMALL_FONT, (255, 255, 255))
         TextRect.center = (self.WIDTH - 70 , 25)
@@ -390,19 +392,20 @@ class Game:
 
     def update(self):
         self.counter += 1
-        if self.snake.head() == self.food.position:
-            self.snake.add = True
-            self.food.respawn(self)
+        for snake in self.snakes:
+            if snake.head() == self.food.position:
+                snake.add = True
+                self.food.respawn(self)
 
-        if self.counter % 5 == 0:
-            if self.snake.up:
-                self.snake.go_up()
-            if self.snake.down:
-                self.snake.go_down()
-            if self.snake.right:
-                self.snake.go_right()
-            if self.snake.left:
-                self.snake.go_left()
+            if self.counter % 5 == 0:
+                if snake.up:
+                    snake.go_up()
+                if snake.down:
+                    snake.go_down()
+                if snake.right:
+                    snake.go_right()
+                if snake.left:
+                    snake.go_left()
 
     def game_over(self):
         sleep(1)
