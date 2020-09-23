@@ -3,17 +3,10 @@ from random import randint
 from time import sleep
 
 import pygame
-
-from database import Database
-
 pygame.font.init()
 
-
-def text_objects(text, font, color=None):
-    if not color:
-        color = (0, 0, 0)
-    textSurface = font.render(text, True, color)
-    return textSurface, textSurface.get_rect()
+from game_dev.Game import Game
+from database import Database
 
 
 class Player:
@@ -165,34 +158,16 @@ class Snake:
         self.left = False
 
 
-class Game:
-    WIDTH = 400
-    HEIGHT = 400
-
-    # SIDE = 7
-
+class MyGame(Game):
     TILE_BORDER = 1
 
-    TICK = 30
-
-    TITLE = "Snake"
-
-    SMALL_FONT = pygame.font.SysFont("comicsans", 35)
-    STAT_FONT = pygame.font.SysFont("comicsans", 50)
-    MID_FONT = pygame.font.SysFont("comicsans", 75)
-    LARGE_FONT = pygame.font.SysFont("comicsans", 100)
-
     def __init__(self, side):
-
+        Game.__init__(self, 400, 400, "Snake")
         self.multiplayer = False
 
-        self.mainloop = False
         self.menu_loop = False
         self.change_player_loop = False
         self.add_player_loop = False
-
-        self.win = None
-        self.clock = None
 
         self.TILE_WIDTH = self.WIDTH / side
         self.TILE_HEIGHT = self.HEIGHT / side
@@ -567,43 +542,6 @@ class Game:
         # pygame.quit()
         # quit()
 
-    def button(self, text, x, y, width, height, main_color, mouse_color, action=None):
-        """
-        helps to create buttons on the screen
-        """
-        mouse = pygame.mouse.get_pos()
-        click = pygame.mouse.get_pressed()
-
-        if x + width > mouse[0] > x and y + height > mouse[1] > y:
-            pygame.draw.rect(self.win, mouse_color, (x, y, width, height))
-            if click[0] == 1 and action:
-                action()
-
-        else:
-            pygame.draw.rect(self.win, main_color, (x, y, width, height))
-
-        self.label(
-            text=text,
-            font=self.STAT_FONT,
-            color=(0, 0, 0),
-            x=x + (width / 2),
-            y=y + (height / 2)
-        )
-
-    def label(self, text: str, font, color, x, y):
-        TextSurf, TextRect = text_objects(
-            text,
-            font,
-            color
-        )
-        TextRect.center = (x, y)
-        self.win.blit(TextSurf, TextRect)
-
-    @staticmethod
-    def exit():
-        pygame.quit()
-        quit()
-
     def switch_player(self, i):
         self.player_index = i
         self.menu()
@@ -620,10 +558,5 @@ class Game:
     def choose_players(self):
         pass
 
-    def check_exit(self):
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                self.exit()
 
-
-Game(13).menu()
+MyGame(13).menu()
