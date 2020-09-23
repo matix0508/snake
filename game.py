@@ -1,11 +1,12 @@
-import pygame
-from math import sqrt
-from random import randint
-from database import Database
-from time import sleep
 import string
-pygame.font.init()
+from random import randint
+from time import sleep
 
+import pygame
+
+from database import Database
+
+pygame.font.init()
 
 
 def text_objects(text, font, color=None):
@@ -14,11 +15,14 @@ def text_objects(text, font, color=None):
     textSurface = font.render(text, True, color)
     return textSurface, textSurface.get_rect()
 
+
 class Player:
-    def __init__(self, nick: str):
+    def __init__(self, nick: str, snake=None):
         self.nick = nick
         self.games = None
         self.best_score = None
+        self.snake = snake
+        self.score = 0
 
     def average_score(self):
         if self.games and self.best_score:
@@ -26,9 +30,9 @@ class Player:
 
     def __eq__(self, other):
         if self.nick == other.nick:
-            True
+            return True
         else:
-            False
+            return False
 
 
 class Position:
@@ -40,7 +44,10 @@ class Position:
         return f"Position: [{self.x}, {self.y}]"
 
     def __add__(self, other):
-        return Position(self.x + other.x, self.y + other.y)
+        return Position(
+            self.x + other.x,
+            self.y + other.y
+        )
 
     def __eq__(self, other):
         if self.x == other.x and self.y == other.y:
@@ -48,33 +55,49 @@ class Position:
         else:
             return False
 
+
 class Food:
     def __init__(self, game):
-        self.position = Position(randint(0, game.SIDE-1), randint(0, game.SIDE-1))
-
+        self.position = Position(
+            randint(0, game.SIDE - 1),
+            randint(0, game.SIDE - 1)
+        )
 
     def draw(self, game):
         pygame.draw.rect(
-                        game.win,
-                        (0, 255, 0),
-                            (self.position.x*game.TILE_WIDTH,
-                            self.position.y*game.TILE_HEIGHT,
-                            game.TILE_WIDTH-game.TILE_BORDER,
-                            game.TILE_HEIGHT- game.TILE_BORDER
-                            )
-                        )
+            game.win,
+            (0, 255, 0),
+            (
+                self.position.x * game.TILE_WIDTH,
+                self.position.y * game.TILE_HEIGHT,
+                game.TILE_WIDTH - game.TILE_BORDER,
+                game.TILE_HEIGHT - game.TILE_BORDER
+            )
+        )
+
     def respawn(self, game):
-        self.position = Position(randint(0, game.SIDE-1), randint(0, game.SIDE-1))
-        while self.position in game.snake.body:
-            self.position = Position(randint(0, game.SIDE-1), randint(0, game.SIDE-1))
-        game.score += 1
+        self.position = Position(
+            randint(0, game.SIDE - 1),
+            randint(0, game.SIDE - 1)
+        )
+        for snake in game.snakes:
+            while self.position in snake.body:
+                self.position = Position(
+                    randint(0, game.SIDE - 1),
+                    randint(0, game.SIDE - 1)
+                )
 
         # print(f"food: {self.position}")
 
 
 class Snake:
     def __init__(self, game):
-        self.body = [Position(randint(3, game.SIDE - 3), randint(3, game.SIDE - 3))]
+        self.body = [
+            Position(
+                randint(3, game.SIDE - 3),
+                randint(3, game.SIDE - 3)
+            )
+        ]
         self.add = False
         self.side = game.SIDE
         self.up = False
@@ -83,7 +106,6 @@ class Snake:
         self.left = False
         self.game = game
 
-
     def go_up(self):
         if self.head().y > 0:
             self.move(0, -1)
@@ -91,13 +113,13 @@ class Snake:
             self.game.game_over()
 
     def go_down(self):
-        if self.head().y < self.side-1:
+        if self.head().y < self.side - 1:
             self.move(0, 1)
         else:
             self.game.game_over()
 
     def go_right(self):
-        if self.head().x < self.side-1:
+        if self.head().x < self.side - 1:
             self.move(1, 0)
         else:
             self.game.game_over()
@@ -110,7 +132,7 @@ class Snake:
 
     def move(self, x, y):
         new = self.body[-1] + Position(x, y)
-        if not new in self.body:
+        if new not in self.body:
             self.body.append(new)
             if not self.add:
                 self.body.pop(0)
@@ -118,21 +140,20 @@ class Snake:
         else:
             self.game.game_over()
 
-
     def draw(self, game):
         #
         for tile in self.body:
             # print(tile)
             pygame.draw.rect(
-                            game.win,
-                            (255, 0, 0),
-                                (tile.x*game.TILE_WIDTH,
-                                tile.y*game.TILE_HEIGHT,
-                                game.TILE_WIDTH-game.TILE_BORDER,
-                                game.TILE_HEIGHT- game.TILE_BORDER
-                                )
-                            )
-
+                game.win,
+                (255, 0, 0),
+                (
+                    tile.x * game.TILE_WIDTH,
+                    tile.y * game.TILE_HEIGHT,
+                    game.TILE_WIDTH - game.TILE_BORDER,
+                    game.TILE_HEIGHT - game.TILE_BORDER
+                )
+            )
 
     def head(self):
         return self.body[-1]
@@ -152,7 +173,6 @@ class Game:
 
     TILE_BORDER = 1
 
-
     TICK = 30
 
     TITLE = "Snake"
@@ -163,9 +183,13 @@ class Game:
     LARGE_FONT = pygame.font.SysFont("comicsans", 100)
 
     def __init__(self, side):
+
+        self.multiplayer = False
+
         self.mainloop = False
         self.menu_loop = False
         self.change_player_loop = False
+        self.add_player_loop = False
 
         self.win = None
         self.clock = None
@@ -175,7 +199,7 @@ class Game:
 
         self.SIDE = side
 
-        self.snake = None
+        self.snakes = []
         self.food = None
         self.score = 0
 
@@ -185,7 +209,9 @@ class Game:
 
         self.players = [Player("guest")]
         self.player = None
+        self.player2 = None
         self.player_index = 0
+        self.player2_index = 1
 
     def main(self):
         self.setup()
@@ -198,59 +224,115 @@ class Game:
 
             self.draw_window()
 
-
-
     def menu(self):
         self.setup()
         self.menu_loop = True
         while self.menu_loop:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                        self.exit()
+            self.check_exit()
 
             self.win.fill((0, 0, 0))
-            TextSurf, TextRect = text_objects("Snake", self.LARGE_FONT, (255, 255, 255))
-            TextRect.center = (self.WIDTH / 2, 100)
-            self.win.blit(TextSurf, TextRect)
+            self.label(
+                text="Snake",
+                font=self.LARGE_FONT,
+                color=(255, 255, 255),
+                x=self.WIDTH / 2,
+                y=100
+            )
 
-            TextSurf, TextRect = text_objects(f"Best score: {self.player.best_score}", self.SMALL_FONT, (255, 255, 255))
-            TextRect.center = (self.WIDTH - 100 , 50)
-            self.win.blit(TextSurf, TextRect)
+            self.label(
+                text=f"Best score: {self.player.best_score}",
+                font=self.SMALL_FONT,
+                color=(255, 255, 255),
+                x=self.WIDTH - 100,
+                y=50
+            )
 
-            TextSurf, TextRect = text_objects(f"{self.player.nick}", self.SMALL_FONT, (255, 255, 0))
-            TextRect.center = (100 , 50)
-            self.win.blit(TextSurf, TextRect)
+            self.label(
+                text=f"{self.player.nick}",
+                font=self.SMALL_FONT,
+                color=(255, 255, 0),
+                x=100,
+                y=50
+            )
 
-            self.button("Play a Game", 100, 150, 220, 50, (0, 250, 0), (0, 200, 0), self.main)
-            self.button("Change player", 100, 200, 260, 50, (255, 255, 0), (200, 200, 0), self.change_player)
-            self.button("Exit", 100, 250, 140, 50, (255, 0, 0), (200, 0, 0), self.exit)
-
+            self.button(
+                text="Play a Game",
+                x=100, y=150,
+                width=220, height=50,
+                main_color=(0, 250, 0),
+                mouse_color=(0, 200, 0),
+                action=self.main
+            )
+            self.button(
+                text="Change player",
+                x=100, y=200,
+                width=260, height=50,
+                main_color=(255, 255, 0),
+                mouse_color=(200, 200, 0),
+                action=self.change_player
+            )
+            if len(self.players) > 1:
+                self.button(
+                    text="Multiplier",
+                    x=100, y=250,
+                    width=180, height=50,
+                    main_color=(255, 0, 255),
+                    mouse_color=(200, 0, 200),
+                    action=self.choose_players()
+                )
+            self.button(
+                text="Exit",
+                x=100, y=300,
+                width=140, height=50,
+                main_color=(255, 0, 0),
+                mouse_color=(200, 0, 0),
+                action=self.exit
+            )
 
             pygame.display.update()
             self.clock.tick(15)
-
 
     def change_player(self):
         self.setup()
         self.change_player_loop = True
         while self.change_player_loop:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                        self.exit()
+            self.check_exit()
 
             self.win.fill((0, 0, 0))
 
             for i, player in enumerate(self.players):
-                self.button(player.nick,
-                            100, 150 + 50*i, # coordinates
-                            220, 50, # size
-                            (0, 250, 0), (0, 200, 0), # colors
-                            lambda: self.switch_player(i)) # action
+                self.button(
+                    text=player.nick,
+                    x=100,
+                    y=150 + 50 * i,
+                    width=220,
+                    height=50,
+                    main_color=(0, 250, 0),
+                    mouse_color=(0, 200, 0),
+                    action=lambda: self.switch_player(i)
+                )
                 if i != 0:
-                    self.button("-", 50, 150 + 50*i, 50, 50, (250, 0, 0), (200, 0, 0), lambda: self.delete_player(i))
+                    self.button(
+                        text="-",
+                        x=50,
+                        y=150 + 50 * i,
+                        width=50,
+                        height=50,
+                        main_color=(250, 0, 0),
+                        mouse_color=(200, 0, 0),
+                        action=lambda: self.delete_player(i)
+                    )
 
-            self.button("+", self.WIDTH - 100, 50, 50, 50, (0, 250, 0), (0, 200, 0), self.add_player)
-
+            self.button(
+                text="+",
+                x=self.WIDTH - 100,
+                y=50,
+                width=50,
+                height=50,
+                main_color=(0, 250, 0),
+                mouse_color=(0, 200, 0),
+                action=self.add_player
+            )
 
             pygame.display.update()
             self.clock.tick(15)
@@ -273,23 +355,26 @@ class Game:
                         self.players.append(Player(name))
                         self.change_player()
 
-
             self.win.fill((0, 0, 0))
 
-            TextSurf, TextRect = text_objects("type your nick:", self.STAT_FONT, (255, 255, 0))
-            TextRect.center = (self.WIDTH // 2 , self.HEIGHT // 4)
-            self.win.blit(TextSurf, TextRect)
+            self.label(
+                text="type your nick:",
+                font=self.STAT_FONT,
+                color=(255, 255, 0),
+                x=self.WIDTH // 2,
+                y=self.HEIGHT // 4
+            )
 
-            TextSurf, TextRect = text_objects(f"{name}", self.STAT_FONT, (255, 255, 0))
-            TextRect.center = (self.WIDTH // 2 , self.HEIGHT // 2)
-            self.win.blit(TextSurf, TextRect)
-
+            self.label(
+                text=f"{name}",
+                font=self.STAT_FONT,
+                color=(255, 255, 0),
+                x=self.WIDTH // 2,
+                y=self.HEIGHT // 2
+            )
 
             pygame.display.update()
             self.clock.tick(60)
-
-
-
 
     def setup(self):
         self.mainloop = False
@@ -300,7 +385,9 @@ class Game:
         pygame.display.set_caption(self.TITLE)
         self.clock = pygame.time.Clock()
 
-        self.snake = Snake(self)
+        self.snakes = [Snake(self)]
+        if self.multiplayer:
+            self.snakes.append(Snake(self))
         self.food = Food(self)
 
         gameIcon = pygame.image.load('snake.png')
@@ -309,22 +396,24 @@ class Game:
         self.counter = 0
         self.score = 0
 
-
         self.db = Database("snake.db")
         if not self.db.table_exists('players'):
-            self.db.create_table('players',
-                            ('id integer PRIMARY KEY',
-                            'nick text NOT NULL',
-                            'best_score integer',
-                            'games integer'
-                            ))
+            self.db.create_table(
+                'players',
+                (
+                    'id integer PRIMARY KEY',
+                    'nick text NOT NULL',
+                    'best_score integer',
+                    'games integer'
+                )
+            )
             # for nick in ('matix0508', 'guest'):
             #     self.db.insert('players', (('nick', nick), ('best_score', '0'), ('games', '0')))
         self.db.create_connection()
         self.db.cursor.execute("SELECT * FROM players")
         data = self.db.cursor.fetchall()
-        for player in data:
-            _, nick, _, _ = player
+        for player_data in data:
+            _, nick, _, _ = player_data
             nicks = []
             for player in self.players:
                 nicks.append(player.nick)
@@ -337,106 +426,181 @@ class Game:
                     player.best_score = 0
                 if not player.games:
                     player.games = 0
-                self.db.insert('players', (('nick', player.nick), ('best_score', player.best_score), ('games', player.games)))
-            player.best_score = self.db.select('players', 'best_score', ('nick', player.nick))
-            player.games = self.db.select('players', 'games', ('nick', player.nick))
+                self.db.insert(
+                    'players',
+                    (
+                        ('nick', player.nick),
+                        ('best_score', player.best_score),
+                        ('games', player.games)
+                    )
+                )
+
+            player.best_score = self.db.select(
+                'players',
+                'best_score',
+                ('nick', player.nick)
+            )
+            player.games = self.db.select(
+                'players',
+                'games',
+                ('nick', player.nick)
+            )
 
         self.player = self.players[self.player_index]
+        self.player.snake = self.snakes[0]
+        if self.multiplayer:
+            self.player2 = self.players[self.player2_index]
 
     def check_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                    self.exit()
+                self.exit()
             if event.type == pygame.KEYDOWN:
-                key = pygame.key.name(event.key)
                 if event.key == pygame.K_UP:
-                    self.snake.move_reset()
-                    self.snake.up = True
+                    self.snakes[0].move_reset()
+                    self.snakes[0].up = True
                 if event.key == pygame.K_DOWN:
-                    self.snake.move_reset()
-                    self.snake.down = True
+                    self.snakes[0].move_reset()
+                    self.snakes[0].down = True
                 if event.key == pygame.K_RIGHT:
-                    self.snake.move_reset()
-                    self.snake.right = True
+                    self.snakes[0].move_reset()
+                    self.snakes[0].right = True
                 if event.key == pygame.K_LEFT:
-                    self.snake.move_reset()
-                    self.snake.left = True
+                    self.snakes[0].move_reset()
+                    self.snakes[0].left = True
 
-
-
+                if self.multiplayer:
+                    if event.key == pygame.K_w:
+                        self.snakes[1].move_reset()
+                        self.snakes[1].up = True
+                    if event.key == pygame.K_s:
+                        self.snakes[1].move_reset()
+                        self.snakes[1].down = True
+                    if event.key == pygame.K_d:
+                        self.snakes[1].move_reset()
+                        self.snakes[1].right = True
+                    if event.key == pygame.K_a:
+                        self.snakes[1].move_reset()
+                        self.snakes[1].left = True
 
     def draw_window(self):
 
-        self.win.fill((0, 0, 0)) # Black background
+        self.win.fill((0, 0, 0))  # Black background
 
         for i in range(self.SIDE):
             for j in range(self.SIDE):
-                pygame.draw.rect(self.win,
-                                (255, 255, 255),
-                                    (i*self.TILE_WIDTH,
-                                    j*self.TILE_HEIGHT,
-                                    self.TILE_WIDTH,
-                                    self.TILE_HEIGHT),
-                                self.TILE_BORDER)
+                pygame.draw.rect(
+                    self.win,
+                    (255, 255, 255),
+                    (
+                        i * self.TILE_WIDTH,
+                        j * self.TILE_HEIGHT,
+                        self.TILE_WIDTH,
+                        self.TILE_HEIGHT
+                    ),
+                    self.TILE_BORDER
+                )
 
         self.food.draw(self)
-        self.snake.draw(self)
+        for snake in self.snakes:
+            snake.draw(self)
 
-        TextSurf, TextRect = text_objects(f"score: {self.score}", self.SMALL_FONT, (255, 255, 255))
-        TextRect.center = (self.WIDTH - 70 , 25)
-        self.win.blit(TextSurf, TextRect)
+        self.label(
+            text=f"score: {self.player.score}",
+            font=self.SMALL_FONT,
+            color=(255, 255, 255),
+            x=self.WIDTH - 70,
+            y=25
+        )
 
         pygame.display.update()
 
     def update(self):
         self.counter += 1
-        if self.snake.head() == self.food.position:
-            self.snake.add = True
-            self.food.respawn(self)
+        for snake in self.snakes:
 
-        if self.counter % 5 == 0:
-            if self.snake.up:
-                self.snake.go_up()
-            if self.snake.down:
-                self.snake.go_down()
-            if self.snake.right:
-                self.snake.go_right()
-            if self.snake.left:
-                self.snake.go_left()
+            if self.counter % 5 == 0:
+                if snake.up:
+                    snake.go_up()
+                if snake.down:
+                    snake.go_down()
+                if snake.right:
+                    snake.go_right()
+                if snake.left:
+                    snake.go_left()
+
+        if self.multiplayer:
+            for pl in (self.player, self.player2):
+                self.check_food(pl)
+        else:
+            self.check_food(self.player)
+
+    def check_food(self, player):
+        if player.snake.head() == self.food.position:
+            player.score += 1
+            player.snake.add = True
+            self.food.respawn(self)
 
     def game_over(self):
         sleep(1)
         self.mainloop = False
         self.player.games += 1
-        if self.score > self.player.best_score:
-            self.player.best_score = self.score
-            self.db.update('players', ('best_score', str(self.player.best_score)), ('nick', self.player.nick))
+        if self.multiplayer:
+            lst = [self.player, self.player2]
+        else:
+            lst = [self.player]
+        for player in lst:
+            if player.score > player.best_score:
+                player.best_score = player.score
+                self.db.update(
+                    'players',
+                    ('best_score', str(player.best_score)),
+                    ('nick', player.nick)
+                )
 
-        self.db.update('players', ('games', str(self.player.games)), ('nick', self.player.nick))
+        self.db.update(
+            'players',
+            ('games', str(self.player.games)),
+            ('nick', self.player.nick)
+        )
         self.menu()
         # pygame.quit()
         # quit()
 
-
-    def button(self, msg, x, y, w, h, ic, ac, action=None):
+    def button(self, text, x, y, width, height, main_color, mouse_color, action=None):
         """
         helps to create buttons on the screen
         """
         mouse = pygame.mouse.get_pos()
         click = pygame.mouse.get_pressed()
 
-        if x+w > mouse[0] > x and y+h > mouse[1] > y:
-            pygame.draw.rect(self.win, ac,(x,y,w,h))
-            if click[0] == 1 and action != None:
+        if x + width > mouse[0] > x and y + height > mouse[1] > y:
+            pygame.draw.rect(self.win, mouse_color, (x, y, width, height))
+            if click[0] == 1 and action:
                 action()
 
         else:
-            pygame.draw.rect(self.win, ic,(x,y,w,h))
-        textSurf, textRect = text_objects(msg, self.STAT_FONT)
-        textRect.center = ( (x+(w/2)), (y+(h/2)) )
-        self.win.blit(textSurf, textRect)
+            pygame.draw.rect(self.win, main_color, (x, y, width, height))
 
-    def exit(self):
+        self.label(
+            text=text,
+            font=self.STAT_FONT,
+            color=(0, 0, 0),
+            x=x + (width / 2),
+            y=y + (height / 2)
+        )
+
+    def label(self, text: str, font, color, x, y):
+        TextSurf, TextRect = text_objects(
+            text,
+            font,
+            color
+        )
+        TextRect.center = (x, y)
+        self.win.blit(TextSurf, TextRect)
+
+    @staticmethod
+    def exit():
         pygame.quit()
         quit()
 
@@ -445,7 +609,6 @@ class Game:
         self.menu()
 
     def delete_player(self, i):
-        nick = self.players[i]
         self.db.delete("players")
         self.db.create_connection()
         self.db.cursor.execute("SELECT * FROM players")
@@ -453,5 +616,14 @@ class Game:
         self.db.save()
         print(data)
         self.players.pop(i)
+
+    def choose_players(self):
+        pass
+
+    def check_exit(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.exit()
+
 
 Game(13).menu()
