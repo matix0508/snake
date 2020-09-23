@@ -506,10 +506,11 @@ class Game:
             snake.draw(self)
 
         self.label(
-            f"score: {self.player.score}",
-            self.SMALL_FONT,
-            (255, 255, 255),
-            self.WIDTH - 70, 25
+            text=f"score: {self.player.score}",
+            font=self.SMALL_FONT,
+            color=(255, 255, 255),
+            x=self.WIDTH - 70,
+            y=25
         )
 
         pygame.display.update()
