@@ -273,7 +273,7 @@ class Game:
             )
             if len(self.players) > 1:
                 self.button(
-                    text="Multiplier",
+                    text="Multiplayer",
                     x=100, y=250,
                     width=180, height=50,
                     main_color=(255, 0, 255),
