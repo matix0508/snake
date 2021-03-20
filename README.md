@@ -1,2 +1,12 @@
 # snake
-I'm writting my own Snake game to practise coding skills. It's a small project which hopefully is going to be worked on from time to time.
+Basic Snake game written in PyGame
+
+## Technologies
+* Python 3.7.5
+* PyGame
+* db-sqlite3
+
+## Setup
+* Clone directory and run `pip3 install -r requirements.txt`
+* run `python3 game.py`
+
